@@ -236,10 +236,13 @@ export class InvoiceService {
     return await this.connection.transaction(async (trx) => {
       const invoice = await trx.findOne(InvoiceSchema, {
         where: { id: id },
-        relations: ['cashier', 'menus.menu'],
+        relations: ['cashier', 'cashier.roles', 'menus.menu'],
       });
 
       if (!invoice) throw new NotFoundException(`Invoice not found.`);
+
+      delete invoice.cashier.password;
+      delete invoice.cashier.token;
 
       return invoice;
     });
