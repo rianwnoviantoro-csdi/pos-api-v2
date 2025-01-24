@@ -10,7 +10,7 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
-    origin: ['http://localhost:5173'],
+    origin: '*',
     credentials: true,
     optionsSuccessStatus: 200,
   });
@@ -25,6 +25,15 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('POS')
     .addBearerAuth()
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-pos-api-key',
+        in: 'header',
+        description: 'API Key for authentication',
+      },
+      'x-pos-api-key',
+    )
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);

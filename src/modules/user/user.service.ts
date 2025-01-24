@@ -75,7 +75,7 @@ export class UserService {
     return this.connection.transaction(async (trx) => {
       const existUser = await trx.findOne(UserSchema, {
         where: { email: loginDto.email },
-        relations: ['roles'],
+        relations: ['roles', 'roles.permissions'],
       });
 
       if (!existUser) {
@@ -138,7 +138,7 @@ export class UserService {
 
       const existUser = await trx.findOne(UserSchema, {
         where: { token: refreshToken },
-        relations: ['roles'],
+        relations: ['roles', 'roles.permissions'],
       });
 
       if (!existUser) {

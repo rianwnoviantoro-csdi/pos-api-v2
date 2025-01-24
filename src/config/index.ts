@@ -21,4 +21,7 @@ export default () => ({
     secret: process.env.JWT_REFRESH_SECRET,
     expires: process.env.JWT_REFRESH_EXPIRE,
   },
+  api: {
+    key: process.env.API_KEY,
+  },
 });
