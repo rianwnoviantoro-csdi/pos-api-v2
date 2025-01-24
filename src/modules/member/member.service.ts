@@ -95,7 +95,10 @@ export class MemberService {
 
   async findOne(id: number): Promise<Member> {
     return await this.connection.transaction(async (trx) => {
-      const member = await trx.findOne(MemberSchema, { where: { id } });
+      const member = await trx.findOne(MemberSchema, {
+        where: { id },
+        relations: ['invoices'],
+      });
 
       if (!member) throw new NotFoundException(`Member not found.`);
 
