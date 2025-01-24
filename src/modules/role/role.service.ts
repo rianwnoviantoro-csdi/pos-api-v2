@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { Connection, DeleteResult } from 'typeorm';
+import { Brackets, Connection, DeleteResult } from 'typeorm';
 import { Role, RoleSchema } from 'src/config/database/schemas/role.schema';
 import { Request } from 'express';
 import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Injectable()
 export class RoleService {
@@ -46,9 +47,50 @@ export class RoleService {
     });
   }
 
-  async findAll(): Promise<Role[]> {
+  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
-      return await trx.find(RoleSchema);
+      const page = Number(filter.page) || 1;
+      const limit = Number(filter.limit) || 10;
+
+      const query = trx.getRepository(RoleSchema).createQueryBuilder('role');
+
+      if (filter.search) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('role.name ILIKE :search', {
+              search: `%${filter.search}%`,
+            }).orWhere('role.code ILIKE :search', {
+              search: `%${filter.search}%`,
+            });
+          }),
+        );
+      }
+
+      const sortMapping: Record<string, string> = {
+        name: 'role.name',
+        createdAt: 'role.createdAt',
+      };
+
+      if (filter.sort && filter.order) {
+        const sortColumn = sortMapping[filter.sort] || 'role.createdAt';
+        const order = filter.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        query.orderBy(sortColumn, order);
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [roles, total] = await query.getManyAndCount();
+
+      return {
+        data: roles,
+        meta: {
+          total,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     });
   }
 

@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateStockDto } from './dto/create-stock.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
-import { Connection, DeleteResult } from 'typeorm';
+import { Brackets, Connection, DeleteResult } from 'typeorm';
 import { Stock, StockSchema } from 'src/config/database/schemas/stock.schema';
 import { Request } from 'express';
 import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Injectable()
 export class StockService {
@@ -30,9 +31,49 @@ export class StockService {
     });
   }
 
-  async findAll(): Promise<Stock[]> {
+  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
-      return await trx.find(StockSchema);
+      const page = Number(filter.page) || 1;
+      const limit = Number(filter.limit) || 10;
+
+      const query = trx.getRepository(StockSchema).createQueryBuilder('stock');
+
+      if (filter.search) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('stock.name ILIKE :search', {
+              search: `%${filter.search}%`,
+            });
+          }),
+        );
+      }
+
+      const sortMapping: Record<string, string> = {
+        name: 'stock.name',
+        amount: 'stock.amount',
+        createdAt: 'stock.createdAt',
+      };
+
+      if (filter.sort && filter.order) {
+        const sortColumn = sortMapping[filter.sort] || 'stock.createdAt';
+        const order = filter.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        query.orderBy(sortColumn, order);
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [stocks, total] = await query.getManyAndCount();
+
+      return {
+        data: stocks,
+        meta: {
+          total,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     });
   }
 

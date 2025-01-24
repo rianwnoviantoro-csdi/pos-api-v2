@@ -9,6 +9,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +20,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/commons/guards/role.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Permissions } from 'src/commons/decorators/role.decorator';
+import { FilterInvoiceDto } from './dto/filter-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -74,14 +76,15 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:user')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.userService.findAll();
+  async findAll(@Query() filter: FilterInvoiceDto) {
+    const { data, meta } = await this.userService.findAll(filter);
 
     return {
       message: 'Success.',
       error: null,
       statusCode: 200,
-      data: result,
+      data,
+      meta,
     };
   }
 

@@ -2,16 +2,52 @@ import { Injectable } from '@nestjs/common';
 import { Connection } from 'typeorm';
 import { RecipeSchema } from 'src/config/database/schemas/recipe.schema';
 import { StockSchema } from 'src/config/database/schemas/stock.schema';
+import { FilterMenuDto } from './dto/filter-menu.dto';
 
 @Injectable()
 export class MenuService {
   constructor(private readonly connection: Connection) {}
 
-  async findAll() {
+  async findAll(filter: FilterMenuDto): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
-      const recipes = await trx.find(RecipeSchema, {
-        relations: ['ingredients.ingredient', 'category'],
-      });
+      const page = Number(filter.page) || 1;
+      const limit = Number(filter.limit) || 10;
+
+      const query = trx
+        .getRepository(RecipeSchema)
+        .createQueryBuilder('recipe')
+        .leftJoinAndSelect('recipe.ingredients', 'ingredients')
+        .leftJoinAndSelect('ingredients.ingredient', 'ingredient')
+        .leftJoinAndSelect('recipe.category', 'category');
+
+      if (filter.search) {
+        query.andWhere('recipe.name ILIKE :recipeName', {
+          recipeName: `%${filter.search}%`,
+        });
+      }
+
+      if (filter.categoryId) {
+        query.andWhere('category.id = :categoryId', {
+          categoryId: filter.categoryId,
+        });
+      }
+
+      const sortMapping: Record<string, string> = {
+        name: 'recipe.name',
+        category: 'category.name',
+        createdAt: 'recipe.createdAt',
+      };
+
+      if (filter.sort && filter.order) {
+        const sortColumn = sortMapping[filter.sort] || 'recipe.createdAt';
+        const order = filter.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        query.orderBy(sortColumn, order);
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [recipes, total] = await query.getManyAndCount();
 
       const stocks = await trx.find(StockSchema);
 
@@ -62,7 +98,15 @@ export class MenuService {
         });
       }
 
-      return availableMenus;
+      return {
+        data: availableMenus,
+        meta: {
+          total,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     });
   }
 }

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { PermissionService } from './permission.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/commons/guards/role.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Permissions } from 'src/commons/decorators/role.decorator';
 import { Request } from 'express';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Controller('permission')
 export class PermissionController {
@@ -47,14 +49,15 @@ export class PermissionController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:permission')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.permissionService.findAll();
+  async findAll(@Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.permissionService.findAll(filter);
 
     return {
       message: 'Success.',
       error: null,
       statusCode: 200,
-      data: result,
+      data,
+      meta,
     };
   }
 

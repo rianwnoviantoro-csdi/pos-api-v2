@@ -20,8 +20,8 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const config = new DocumentBuilder()
-    .setTitle('POST REST API Documentation')
-    .setDescription('The POST REST API description')
+    .setTitle('POS REST API Documentation')
+    .setDescription('The POS REST API description')
     .setVersion('1.0')
     .addTag('POS')
     .addBearerAuth()

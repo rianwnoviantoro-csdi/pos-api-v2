@@ -5,12 +5,13 @@ export interface Recipe {
   id: number;
   name: string;
   price: number;
+  image: string;
   createdAt: Date;
   updatedAt: Date;
 
-  ingredients?: any[];
+  ingredients: any[];
   invoices: any[];
-  category?: any;
+  category: any;
 }
 
 export const RecipeSchema = new EntitySchema<Recipe>({
@@ -27,6 +28,10 @@ export const RecipeSchema = new EntitySchema<Recipe>({
     },
     price: {
       type: Number,
+    },
+    image: {
+      type: String,
+      nullable: true,
     },
   },
   relations: {

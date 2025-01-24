@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { StockService } from './stock.service';
 import { CreateStockDto } from './dto/create-stock.dto';
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/commons/guards/role.guard';
 import { Permissions } from 'src/commons/decorators/role.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Controller('stock')
 export class StockController {
@@ -41,14 +43,15 @@ export class StockController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:stock')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.stockService.findAll();
+  async findAll(@Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.stockService.findAll(filter);
 
     return {
       message: 'Success.',
       error: null,
       statusCode: 200,
-      data: result,
+      data,
+      meta,
     };
   }
 

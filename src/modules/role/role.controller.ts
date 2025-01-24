@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/commons/guards/role.guard';
 import { Permissions } from 'src/commons/decorators/role.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Controller('role')
 export class RoleController {
@@ -41,14 +43,15 @@ export class RoleController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:role')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.roleService.findAll();
+  async findAll(@Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.roleService.findAll(filter);
 
     return {
       message: 'Success.',
       error: null,
       statusCode: 200,
-      data: result,
+      data,
+      meta,
     };
   }
 

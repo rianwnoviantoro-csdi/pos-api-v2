@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { MemberService } from './member.service';
 import { CreateMemberDto } from './dto/create-member.dto';
@@ -17,6 +18,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/commons/guards/role.guard';
 import { Request } from 'express';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Controller('member')
 export class MemberController {
@@ -41,14 +43,15 @@ export class MemberController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:member')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.memberService.findAll();
+  async findAll(@Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.memberService.findAll(filter);
 
     return {
       message: 'Success.',
       error: null,
       statusCode: 200,
-      data: result,
+      data,
+      meta,
     };
   }
 

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Connection } from 'typeorm';
+import { Brackets, Connection } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User, UserSchema } from 'src/config/database/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
@@ -17,6 +17,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { createLog, formatedDate } from 'src/commons/utils/log.util';
 import { RoleSchema } from 'src/config/database/schemas/role.schema';
+import { FilterInvoiceDto } from './dto/filter-user.dto';
 
 @Injectable()
 export class UserService {
@@ -195,12 +196,78 @@ export class UserService {
     });
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(filter: FilterInvoiceDto): Promise<Record<string, any>> {
     return this.connection.transaction(async (trx) => {
-      return await trx.find(UserSchema, {
-        select: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
-        relations: ['roles'],
-      });
+      const page = Number(filter.page) || 1;
+      const limit = Number(filter.limit) || 10;
+
+      const query = trx
+        .getRepository(UserSchema)
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.roles', 'roles')
+        .select([
+          'user.id',
+          'user.name',
+          'user.email',
+          'roles.id',
+          'roles.name',
+          'roles.code',
+          'user.createdAt',
+          'user.updatedAt',
+        ]);
+
+      if (filter.search) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('user.name ILIKE :search', {
+              search: `%${filter.search}%`,
+            })
+              .orWhere('user.email ILIKE :search', {
+                search: `%${filter.search}%`,
+              })
+              .orWhere('roles.name ILIKE :search', {
+                search: `%${filter.search}%`,
+              })
+              .orWhere('roles.code ILIKE :search', {
+                search: `%${filter.search}%`,
+              });
+          }),
+        );
+      }
+
+      if (filter.roleId) {
+        query.andWhere('roles.id = :roleId', {
+          roleId: filter.roleId,
+        });
+      }
+
+      const sortMapping: Record<string, string> = {
+        name: 'user.name',
+        email: 'user.email',
+        role: 'roles.name',
+        createdAt: 'user.createdAt',
+      };
+
+      if (filter.sort && filter.order) {
+        const sortColumn = sortMapping[filter.sort] || 'user.createdAt';
+        const order = filter.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        query.orderBy(sortColumn, order);
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [users, total] = await query.getManyAndCount();
+
+      return {
+        data: users,
+        meta: {
+          total,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     });
   }
 

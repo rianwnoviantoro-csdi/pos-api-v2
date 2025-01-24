@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
-import { Connection, DeleteResult } from 'typeorm';
+import { Brackets, Connection, DeleteResult } from 'typeorm';
 import {
   Recipe,
   RecipeSchema,
@@ -9,6 +9,7 @@ import {
 import { RecipeIngredientSchema } from 'src/config/database/schemas/recipe-ingredient.schema';
 import { Request } from 'express';
 import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { FilterRecipeDto } from './dto/filter-recipe.dto';
 
 @Injectable()
 export class RecipeService {
@@ -50,9 +51,72 @@ export class RecipeService {
     });
   }
 
-  async findAll(): Promise<Recipe[]> {
+  async findAll(filter: FilterRecipeDto): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
-      return await trx.find(RecipeSchema);
+      const page = Number(filter.page) || 1;
+      const limit = Number(filter.limit) || 10;
+
+      const query = trx
+        .getRepository(RecipeSchema)
+        .createQueryBuilder('recipe')
+        .leftJoinAndSelect('recipe.category', 'category')
+        .select([
+          'recipe.id',
+          'recipe.name',
+          'recipe.price',
+          'recipe.image',
+          'recipe.createdAt',
+          'recipe.updatedAt',
+          'category.id',
+          'category.code',
+          'category.name',
+        ]);
+
+      if (filter.search) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('recipe.name ILIKE :search', {
+              search: `%${filter.search}%`,
+            }).orWhere('category.name ILIKE :search', {
+              search: `%${filter.search}%`,
+            });
+          }),
+        );
+      }
+
+      if (filter.categoryId) {
+        query.andWhere('category.id = :categoryId', {
+          categoryId: filter.categoryId,
+        });
+      }
+
+      const sortMapping: Record<string, string> = {
+        name: 'recipe.name',
+        price: 'recipe.price',
+        category: 'category.name',
+        createdAt: 'recipe.createdAt',
+      };
+
+      if (filter.sort && filter.order) {
+        const sortColumn = sortMapping[filter.sort] || 'recipe.createdAt';
+        const order = filter.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        query.orderBy(sortColumn, order);
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [recipes, total] = await query.getManyAndCount();
+
+      return {
+        data: recipes,
+        meta: {
+          total,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     });
   }
 

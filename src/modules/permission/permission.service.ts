@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { Connection, DeleteResult } from 'typeorm';
+import { Brackets, Connection, DeleteResult } from 'typeorm';
 import {
   Permission,
   PermissionSchema,
 } from 'src/config/database/schemas/permission.schema';
 import { Request } from 'express';
 import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Injectable()
 export class PermissionService {
@@ -50,9 +51,52 @@ export class PermissionService {
     });
   }
 
-  async findAll(): Promise<Permission[]> {
+  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
-      return await trx.find(PermissionSchema);
+      const page = Number(filter.page) || 1;
+      const limit = Number(filter.limit) || 10;
+
+      const query = trx
+        .getRepository(PermissionSchema)
+        .createQueryBuilder('permission');
+
+      if (filter.search) {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('permission.name ILIKE :search', {
+              search: `%${filter.search}%`,
+            }).orWhere('permission.code ILIKE :search', {
+              search: `%${filter.search}%`,
+            });
+          }),
+        );
+      }
+
+      const sortMapping: Record<string, string> = {
+        name: 'permission.name',
+        createdAt: 'permission.createdAt',
+      };
+
+      if (filter.sort && filter.order) {
+        const sortColumn = sortMapping[filter.sort] || 'permission.createdAt';
+        const order = filter.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        query.orderBy(sortColumn, order);
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [permissions, total] = await query.getManyAndCount();
+
+      return {
+        data: permissions,
+        meta: {
+          total,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     });
   }
 
