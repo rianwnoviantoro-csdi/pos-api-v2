@@ -10,6 +10,10 @@ import { RecipeIngredientSchema } from 'src/config/database/schemas/recipe-ingre
 import { Request } from 'express';
 import { createLog, formatedDate } from 'src/commons/utils/log.util';
 import { FilterRecipeDto } from './dto/filter-recipe.dto';
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+} from 'src/commons/utils/cloudinary';
 
 @Injectable()
 export class RecipeService {
@@ -18,16 +22,22 @@ export class RecipeService {
   async create(
     req: Request,
     createRecipeDto: CreateRecipeDto,
+    file: Express.Multer.File,
   ): Promise<Recipe> {
     return await this.connection.transaction(async (trx) => {
       const { ingredient: ingredients, ...recipeData } = createRecipeDto;
 
+      const imageUrl: any = await uploadImageToCloudinary(file, 'recipes');
+
       const recipe = await trx.save(RecipeSchema, {
         ...recipeData,
+        image: imageUrl.url,
       });
 
-      if (ingredients && ingredients.length > 0) {
-        const newIngredients = ingredients.map((item) => ({
+      const ingredientArray = JSON.parse(ingredients as any);
+
+      if (ingredientArray && ingredientArray.length > 0) {
+        const newIngredients = ingredientArray.map((item) => ({
           recipe: recipe,
           ingredient: { id: item.id },
           amount: item.amount,
@@ -44,7 +54,7 @@ export class RecipeService {
         user,
         'RECIPE_MODULE',
         `User <b>${user.name}</b> add <b>${recipe.name}</b> as new recipe at <b>${formatedDate(new Date())}</b>.`,
-        { ...createRecipeDto },
+        { ...createRecipeDto, ingredient: ingredientArray },
       );
 
       return recipe;
@@ -181,6 +191,10 @@ export class RecipeService {
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
       const recipe = await this.findOne(id);
+
+      if (recipe.image) {
+        await deleteImageFromCloudinary(recipe.image);
+      }
 
       const deletedRecipe = await trx.delete(RecipeSchema, { id: recipe.id });
 

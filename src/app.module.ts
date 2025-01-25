@@ -16,6 +16,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ApiKeyGuard } from './commons/guards/api-key.guard';
 import { ApiKeyExceptionFilter } from './commons/filters/api-key.filter';
 import { ApiKeyModule } from './modules/api-key/api-key.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ApiKeyModule } from './modules/api-key/api-key.module';
     MemberModule,
     LogModule,
     ApiKeyModule,
+    CloudinaryModule,
   ],
   providers: [
     {

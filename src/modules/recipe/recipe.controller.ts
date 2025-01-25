@@ -9,16 +9,19 @@ import {
   UseGuards,
   Req,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { RecipeService } from './recipe.service';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/commons/guards/role.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Permissions } from 'src/commons/decorators/role.decorator';
 import { Request } from 'express';
 import { FilterRecipeDto } from './dto/filter-recipe.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('recipe')
 export class RecipeController {
@@ -28,8 +31,14 @@ export class RecipeController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('write:recipe')
   @ApiBearerAuth()
-  async create(@Req() req: Request, @Body() createRecipeDto: CreateRecipeDto) {
-    const result = await this.recipeService.create(req, createRecipeDto);
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  async create(
+    @Req() req: Request,
+    @Body() createRecipeDto: CreateRecipeDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const result = await this.recipeService.create(req, createRecipeDto, file);
 
     return {
       message: 'Success.',

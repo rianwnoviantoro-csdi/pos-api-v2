@@ -24,4 +24,9 @@ export default () => ({
   api: {
     key: process.env.API_KEY,
   },
+  cloudinary: {
+    name: process.env.CLOUD_NAME,
+    key: process.env.CLOUD_KEY,
+    secret: process.env.CLOUD_SECRET,
+  },
 });

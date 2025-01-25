@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsNotEmpty,
@@ -10,11 +11,13 @@ import {
 class IngredientDto {
   @IsNotEmpty()
   @IsNumber()
+  @Transform(({ value }) => parseInt(value))
   @ApiProperty({ type: 'number', title: 'id', required: true })
   id: number;
 
   @IsNotEmpty()
   @IsNumber()
+  @Transform(({ value }) => parseInt(value))
   @ApiProperty({ type: 'number', title: 'amount', required: true })
   amount: number;
 
@@ -32,17 +35,26 @@ export class CreateRecipeDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @Transform(({ value }) => parseInt(value))
   @ApiProperty({ type: 'number', title: 'cashier', required: true })
   price: number;
 
   @IsNotEmpty()
   @IsNumber()
+  @Transform(({ value }) => parseInt(value))
   @ApiProperty({ type: 'number', title: 'category', required: true })
   category: number;
 
   @IsNotEmpty()
   @IsArray()
   @ValidateNested({ each: true })
+  @Transform(({ value }) => {
+    try {
+      return typeof value === 'string' ? JSON.parse(value) : value;
+    } catch {
+      throw new Error('Invalid JSON format for ingredient');
+    }
+  })
   @ApiProperty({
     type: [IngredientDto],
     title: 'ingredient',
@@ -50,4 +62,12 @@ export class CreateRecipeDto {
     description: 'Array of ingredient items',
   })
   ingredient: IngredientDto[];
+
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    required: true,
+    description: 'Image file of the recipe',
+  })
+  image: any;
 }
