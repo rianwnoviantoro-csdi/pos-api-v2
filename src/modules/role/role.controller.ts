@@ -43,8 +43,8 @@ export class RoleController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:role')
   @ApiBearerAuth()
-  async findAll(@Query() filter: BaseFilterDto) {
-    const { data, meta } = await this.roleService.findAll(filter);
+  async findAll(@Req() req: Request, @Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.roleService.findAll(req, filter);
 
     return {
       message: 'Success.',
@@ -59,8 +59,8 @@ export class RoleController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:role')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.roleService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.roleService.findOne(req, +id);
 
     return {
       message: 'Success.',

@@ -196,7 +196,10 @@ export class UserService {
     });
   }
 
-  async findAll(filter: FilterInvoiceDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: FilterInvoiceDto,
+  ): Promise<Record<string, any>> {
     return this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -259,6 +262,15 @@ export class UserService {
 
       const [users, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'USER_MODULE',
+        `User <b>${user.name}</b> has view user at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: users,
         meta: {
@@ -271,7 +283,7 @@ export class UserService {
     });
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(req: Request, id: number): Promise<User> {
     return this.connection.transaction(async (trx) => {
       const user = await trx.findOne(UserSchema, {
         where: { id },
@@ -283,17 +295,26 @@ export class UserService {
       delete user.password;
       delete user.token;
 
+      const ReqUser: any = req.user;
+      await createLog(
+        this.connection,
+        ReqUser,
+        'USER_MODULE',
+        `User <b>${ReqUser.name}</b> has view user <b>${user.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        user,
+      );
+
       return user;
     });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(req: Request, id: number, updateUserDto: UpdateUserDto) {
     return await `This action updates a #${id} user`;
   }
 
   async remove(req: Request, id: number) {
     return this.connection.transaction(async (trx) => {
-      const existUser = await this.findOne(id);
+      const existUser = await this.findOne(req, id);
 
       const deletedUser = await trx.delete(UserSchema, { id: existUser.id });
 

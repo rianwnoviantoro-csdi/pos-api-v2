@@ -76,8 +76,8 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:user')
   @ApiBearerAuth()
-  async findAll(@Query() filter: FilterInvoiceDto) {
-    const { data, meta } = await this.userService.findAll(filter);
+  async findAll(@Req() req: Request, @Query() filter: FilterInvoiceDto) {
+    const { data, meta } = await this.userService.findAll(req, filter);
 
     return {
       message: 'Success.',
@@ -92,8 +92,8 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:user')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.userService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.userService.findOne(req, +id);
 
     return {
       message: 'Success.',
@@ -107,8 +107,12 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('write:user')
   @ApiBearerAuth()
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const result = await this.userService.update(+id, updateUserDto);
+  async update(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    const result = await this.userService.update(req, +id, updateUserDto);
 
     return {
       message: 'Success.',

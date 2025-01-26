@@ -51,7 +51,10 @@ export class PermissionService {
     });
   }
 
-  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: BaseFilterDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -88,6 +91,15 @@ export class PermissionService {
 
       const [permissions, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'PERMISSION_MODULE',
+        `User <b>${user.name}</b> has view permission at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: permissions,
         meta: {
@@ -100,13 +112,22 @@ export class PermissionService {
     });
   }
 
-  async findOne(id: number): Promise<Permission> {
+  async findOne(req: Request, id: number): Promise<Permission> {
     return await this.connection.transaction(async (trx) => {
       const permission = await trx.findOne(PermissionSchema, {
         where: { id },
       });
 
       if (!permission) throw new NotFoundException(`Permission not found.`);
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'PERMISSION_MODULE',
+        `User <b>${user.name}</b> has view permission <b>${permission.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        permission,
+      );
 
       return permission;
     });
@@ -118,7 +139,7 @@ export class PermissionService {
     updatePermissionDto: UpdatePermissionDto,
   ): Promise<Permission> {
     return await this.connection.transaction(async (trx) => {
-      const permission = await this.findOne(id);
+      const permission = await this.findOne(req, id);
 
       const { role, ...PermissionData } = updatePermissionDto;
 
@@ -164,7 +185,7 @@ export class PermissionService {
 
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const permission = await this.findOne(id);
+      const permission = await this.findOne(req, id);
 
       const deletedPermission = await trx.delete(PermissionSchema, {
         id: permission.id,

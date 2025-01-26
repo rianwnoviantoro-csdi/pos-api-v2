@@ -39,8 +39,8 @@ export class ApiKeyController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('manage:app')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.apiKeyService.findAll();
+  async findAll(@Req() req: Request) {
+    const result = await this.apiKeyService.findAll(req);
 
     return {
       message: 'Success.',
@@ -54,8 +54,8 @@ export class ApiKeyController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('manage:app')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.apiKeyService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.apiKeyService.findOne(req, +id);
 
     return {
       message: 'Success.',

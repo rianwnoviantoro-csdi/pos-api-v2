@@ -47,7 +47,10 @@ export class RoleService {
     });
   }
 
-  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: BaseFilterDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -82,6 +85,15 @@ export class RoleService {
 
       const [roles, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'ROLE_MODULE',
+        `User <b>${user.name}</b> has view role at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: roles,
         meta: {
@@ -94,7 +106,7 @@ export class RoleService {
     });
   }
 
-  async findOne(id: number): Promise<Role> {
+  async findOne(req: Request, id: number): Promise<Role> {
     return await this.connection.transaction(async (trx) => {
       const role = await trx.findOne(RoleSchema, {
         where: { id },
@@ -102,6 +114,15 @@ export class RoleService {
       });
 
       if (!role) throw new NotFoundException(`Role not found.`);
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'ROLE_MODULE',
+        `User <b>${user.name}</b> has view role <b>${role.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        role,
+      );
 
       return role;
     });
@@ -113,7 +134,7 @@ export class RoleService {
     updateRoleDto: UpdateRoleDto,
   ): Promise<Role> {
     return await this.connection.transaction(async (trx) => {
-      const role = await this.findOne(id);
+      const role = await this.findOne(req, id);
 
       const { permissions, ...roleData } = updateRoleDto;
 
@@ -162,7 +183,7 @@ export class RoleService {
 
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const role = await this.findOne(id);
+      const role = await this.findOne(req, id);
 
       const deletedRole = await trx.delete(RoleSchema, { id: role.id });
 

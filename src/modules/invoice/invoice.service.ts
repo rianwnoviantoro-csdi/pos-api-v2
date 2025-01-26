@@ -152,7 +152,10 @@ export class InvoiceService {
     });
   }
 
-  async findAll(filter: FilterInvoiceDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: FilterInvoiceDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -220,6 +223,15 @@ export class InvoiceService {
 
       const [invoices, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'INVOICE_MODULE',
+        `User <b>${user.name}</b> has view invoice at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: invoices,
         meta: {
@@ -232,7 +244,7 @@ export class InvoiceService {
     });
   }
 
-  async findOne(id: number): Promise<Invoice> {
+  async findOne(req: Request, id: number): Promise<Invoice> {
     return await this.connection.transaction(async (trx) => {
       const invoice = await trx.findOne(InvoiceSchema, {
         where: { id: id },
@@ -243,6 +255,15 @@ export class InvoiceService {
 
       delete invoice.cashier.password;
       delete invoice.cashier.token;
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'INVOICE_MODULE',
+        `User <b>${user.name}</b> has view invoice <b>${invoice.code}</b> at <b>${formatedDate(new Date())}</b>.`,
+        invoice,
+      );
 
       return invoice;
     });

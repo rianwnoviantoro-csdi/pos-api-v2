@@ -2,12 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { LogSchema } from 'src/config/database/schemas/log.schema';
 import { Brackets, Connection } from 'typeorm';
 import { FilterLogDto } from './dto/filter-log.dto';
+import { Request } from 'express';
+import { createLog, formatedDate } from 'src/commons/utils/log.util';
 
 @Injectable()
 export class LogService {
   constructor(private readonly connection: Connection) {}
 
-  async findAll(filter: FilterLogDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: FilterLogDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -85,6 +90,15 @@ export class LogService {
 
       const [logs, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'LOG_MODULE',
+        `User <b>${user.name}</b> has view log at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: logs,
         meta: {
@@ -97,14 +111,23 @@ export class LogService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(req: Request, id: number) {
     return await this.connection.transaction(async (trx) => {
-      const log = await trx.find(LogSchema, {
+      const log = await trx.findOne(LogSchema, {
         where: { id },
         relations: ['user', 'role'],
       });
 
       if (!log) throw new NotFoundException(`Log not found.`);
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'LOG_MODULE',
+        `User <b>${user.name}</b> has view log <b>${log.detail}</b> at <b>${formatedDate(new Date())}</b>.`,
+        log,
+      );
 
       return log;
     });

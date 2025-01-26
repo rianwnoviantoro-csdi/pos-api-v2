@@ -22,7 +22,7 @@ export class CategoryService {
       let parentCategory = null;
 
       if (createCategoryDto.parent) {
-        parentCategory = await this.findOne(createCategoryDto.parent);
+        parentCategory = await this.findOne(req, createCategoryDto.parent);
       }
 
       const newCategory = await trx.save(CategorySchema, {
@@ -45,8 +45,17 @@ export class CategoryService {
     });
   }
 
-  async findAll(): Promise<Category[]> {
+  async findAll(req: Request): Promise<Category[]> {
     return await this.connection.transaction(async (trx) => {
+      const user: any = req.user;
+
+      await createLog(
+        this.connection,
+        user,
+        'CATEGORY_MODULE',
+        `User <b>${user.name}</b> has view category at <b>${formatedDate(new Date())}</b>.`,
+      );
+
       return await trx
         .getRepository(CategorySchema)
         .createQueryBuilder('category')
@@ -71,7 +80,7 @@ export class CategoryService {
     });
   }
 
-  async findOne(id: number): Promise<Category> {
+  async findOne(req: Request, id: number): Promise<Category> {
     return await this.connection.transaction(async (trx) => {
       const category = await trx
         .getRepository(CategorySchema)
@@ -97,6 +106,16 @@ export class CategoryService {
 
       if (!category) throw new NotFoundException(`Category not found.`);
 
+      const user: any = req.user;
+
+      await createLog(
+        this.connection,
+        user,
+        'CATEGORY_MODULE',
+        `User <b>${user.name}</b> has view category <b>${category.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        category,
+      );
+
       return category;
     });
   }
@@ -107,7 +126,7 @@ export class CategoryService {
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     return await this.connection.transaction(async (trx) => {
-      const category = await this.findOne(id);
+      const category = await this.findOne(req, id);
 
       const updatedCategory = await trx.save(CategorySchema, {
         ...category,
@@ -134,7 +153,7 @@ export class CategoryService {
 
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const category = await this.findOne(id);
+      const category = await this.findOne(req, id);
 
       const deletedCategory = await trx.delete(CategorySchema, {
         id: category.id,

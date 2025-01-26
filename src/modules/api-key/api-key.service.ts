@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
-import { UpdateApiKeyDto } from './dto/update-api-key.dto';
 import { Connection, DeleteResult } from 'typeorm';
 import {
   APIKey,
@@ -42,7 +41,7 @@ export class ApiKeyService {
     });
   }
 
-  async findAll(): Promise<APIKey[]> {
+  async findAll(req: Request): Promise<APIKey[]> {
     return await this.connection.transaction(async (trx) => {
       const apikeys = await trx.find(APIKeySchema);
 
@@ -51,15 +50,37 @@ export class ApiKeyService {
         key: `${apiKey.key.slice(0, 10)}${'*'.repeat(apiKey.key.length - 4)}`,
       }));
 
+      const user: any = req.user;
+
+      await createLog(
+        this.connection,
+        user,
+        'API_KEY_MODULE',
+        `User <b>${user.name}</b> has view api key at <b>${formatedDate(new Date())}</b>.`,
+      );
+
       return maskedApiKeys;
     });
   }
 
-  async findOne(id: number): Promise<APIKey> {
+  async findOne(req: Request, id: number): Promise<APIKey> {
     return await this.connection.transaction(async (trx) => {
       const apiKey = await trx.findOne(APIKeySchema, { where: { id } });
 
       if (!apiKey) throw new NotFoundException(`API Key not found.`);
+
+      const user: any = req.user;
+
+      await createLog(
+        this.connection,
+        user,
+        'API_KEY_MODULE',
+        `User <b>${user.name}</b> has view api key <b>${apiKey.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        {
+          ...apiKey,
+          key: `${apiKey.key.slice(0, 10)}${'*'.repeat(apiKey.key.length - 4)}`,
+        },
+      );
 
       return apiKey;
     });
@@ -67,7 +88,7 @@ export class ApiKeyService {
 
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const apiKey = await this.findOne(id);
+      const apiKey = await this.findOne(req, id);
 
       if (apiKey.name === 'root')
         throw new ForbiddenException(`You can't delete root api key.`);

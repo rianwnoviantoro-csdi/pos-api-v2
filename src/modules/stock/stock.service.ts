@@ -31,7 +31,10 @@ export class StockService {
     });
   }
 
-  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: BaseFilterDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -65,6 +68,15 @@ export class StockService {
 
       const [stocks, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'STOCK_MODULE',
+        `User <b>${user.name}</b> has view stock at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: stocks,
         meta: {
@@ -77,11 +89,20 @@ export class StockService {
     });
   }
 
-  async findOne(id: number): Promise<Stock> {
+  async findOne(req: Request, id: number): Promise<Stock> {
     return await this.connection.transaction(async (trx) => {
       const stock = await trx.findOne(StockSchema, { where: { id } });
 
       if (!stock) throw new NotFoundException(`Stock not found.`);
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'STOCK_MODULE',
+        `User <b>${user.name}</b> has view stock <b>${stock.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        stock,
+      );
 
       return stock;
     });
@@ -93,7 +114,7 @@ export class StockService {
     updateStockDto: UpdateStockDto,
   ): Promise<Stock> {
     return await this.connection.transaction(async (trx) => {
-      const stock = await this.findOne(id);
+      const stock = await this.findOne(req, id);
 
       await trx.save(StockSchema, {
         ...stock,
@@ -116,7 +137,7 @@ export class StockService {
 
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const stock = await this.findOne(id);
+      const stock = await this.findOne(req, id);
 
       const deletedStock = await trx.delete(StockSchema, { id: stock.id });
 

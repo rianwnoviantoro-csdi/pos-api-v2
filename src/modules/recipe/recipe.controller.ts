@@ -52,8 +52,8 @@ export class RecipeController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:recipe')
   @ApiBearerAuth()
-  async findAll(@Query() filter: FilterRecipeDto) {
-    const { data, meta } = await this.recipeService.findAll(filter);
+  async findAll(@Req() req: Request, @Query() filter: FilterRecipeDto) {
+    const { data, meta } = await this.recipeService.findAll(req, filter);
 
     return {
       message: 'Success.',
@@ -68,8 +68,8 @@ export class RecipeController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:recipe')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.recipeService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.recipeService.findOne(req, +id);
 
     return {
       message: 'Success.',

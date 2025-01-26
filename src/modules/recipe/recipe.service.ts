@@ -61,7 +61,10 @@ export class RecipeService {
     });
   }
 
-  async findAll(filter: FilterRecipeDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: FilterRecipeDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -118,6 +121,15 @@ export class RecipeService {
 
       const [recipes, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'RECIPE_MODULE',
+        `User <b>${user.name}</b> has view recipe at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: recipes,
         meta: {
@@ -130,7 +142,7 @@ export class RecipeService {
     });
   }
 
-  async findOne(id: number): Promise<Recipe> {
+  async findOne(req: Request, id: number): Promise<Recipe> {
     return await this.connection.transaction(async (trx) => {
       const recipe = await trx.findOne(RecipeSchema, {
         where: { id },
@@ -138,6 +150,15 @@ export class RecipeService {
       });
 
       if (!recipe) throw new NotFoundException(`Recipe not found.`);
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'RECIPE_MODULE',
+        `User <b>${user.name}</b> has view recipe <b>${recipe.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        recipe,
+      );
 
       return recipe;
     });
@@ -149,7 +170,7 @@ export class RecipeService {
     updateRecipeDto: UpdateRecipeDto,
   ): Promise<Recipe> {
     return await this.connection.transaction(async (trx) => {
-      const recipe = await this.findOne(id);
+      const recipe = await this.findOne(req, id);
 
       const { ingredient: ingredients, ...updateData } = updateRecipeDto;
 
@@ -190,7 +211,7 @@ export class RecipeService {
 
   async remove(req: Request, id: number): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const recipe = await this.findOne(id);
+      const recipe = await this.findOne(req, id);
 
       if (recipe.image) {
         await deleteImageFromCloudinary(recipe.image);

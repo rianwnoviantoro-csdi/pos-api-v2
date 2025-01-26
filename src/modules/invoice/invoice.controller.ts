@@ -43,8 +43,8 @@ export class InvoiceController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:invoice')
   @ApiBearerAuth()
-  async findAll(@Query() filter: FilterInvoiceDto) {
-    const { data, meta } = await this.invoiceService.findAll(filter);
+  async findAll(@Req() req: Request, @Query() filter: FilterInvoiceDto) {
+    const { data, meta } = await this.invoiceService.findAll(req, filter);
 
     return {
       message: 'Success.',
@@ -59,8 +59,8 @@ export class InvoiceController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:invoice')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.invoiceService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.invoiceService.findOne(req, +id);
 
     return {
       message: 'Success.',

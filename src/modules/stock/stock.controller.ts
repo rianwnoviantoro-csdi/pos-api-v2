@@ -43,8 +43,8 @@ export class StockController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:stock')
   @ApiBearerAuth()
-  async findAll(@Query() filter: BaseFilterDto) {
-    const { data, meta } = await this.stockService.findAll(filter);
+  async findAll(@Req() req: Request, @Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.stockService.findAll(req, filter);
 
     return {
       message: 'Success.',
@@ -59,8 +59,8 @@ export class StockController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:stock')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.stockService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.stockService.findOne(req, +id);
 
     return {
       message: 'Success.',

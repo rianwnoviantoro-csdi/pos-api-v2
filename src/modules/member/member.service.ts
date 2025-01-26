@@ -42,7 +42,10 @@ export class MemberService {
     });
   }
 
-  async findAll(filter: BaseFilterDto): Promise<Record<string, any>> {
+  async findAll(
+    req: Request,
+    filter: BaseFilterDto,
+  ): Promise<Record<string, any>> {
     return await this.connection.transaction(async (trx) => {
       const page = Number(filter.page) || 1;
       const limit = Number(filter.limit) || 10;
@@ -81,6 +84,15 @@ export class MemberService {
 
       const [members, total] = await query.getManyAndCount();
 
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'MEMBER_MODULE',
+        `User <b>${user.name}</b> has view member at <b>${formatedDate(new Date())}</b>.`,
+        { ...filter },
+      );
+
       return {
         data: members,
         meta: {
@@ -93,7 +105,7 @@ export class MemberService {
     });
   }
 
-  async findOne(id: number): Promise<Member> {
+  async findOne(req: Request, id: number): Promise<Member> {
     return await this.connection.transaction(async (trx) => {
       const member = await trx.findOne(MemberSchema, {
         where: { id },
@@ -101,6 +113,15 @@ export class MemberService {
       });
 
       if (!member) throw new NotFoundException(`Member not found.`);
+
+      const user: any = req.user;
+      await createLog(
+        this.connection,
+        user,
+        'MEMBER_MODULE',
+        `User <b>${user.name}</b> has view member <b>${member.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        member,
+      );
 
       return member;
     });
@@ -112,7 +133,7 @@ export class MemberService {
     updateMemberDto: UpdateMemberDto,
   ): Promise<Member> {
     return await this.connection.transaction(async (trx) => {
-      const member = await this.findOne(id);
+      const member = await this.findOne(req, id);
 
       await trx.save(MemberSchema, {
         ...member,
@@ -135,7 +156,7 @@ export class MemberService {
 
   async remove(id: number, req: Request): Promise<DeleteResult> {
     return await this.connection.transaction(async (trx) => {
-      const member = await this.findOne(id);
+      const member = await this.findOne(req, id);
 
       const user: any = req.user;
 

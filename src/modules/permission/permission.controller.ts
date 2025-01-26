@@ -49,8 +49,8 @@ export class PermissionController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:permission')
   @ApiBearerAuth()
-  async findAll(@Query() filter: BaseFilterDto) {
-    const { data, meta } = await this.permissionService.findAll(filter);
+  async findAll(@Req() req: Request, @Query() filter: BaseFilterDto) {
+    const { data, meta } = await this.permissionService.findAll(req, filter);
 
     return {
       message: 'Success.',
@@ -65,8 +65,8 @@ export class PermissionController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:permission')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.permissionService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.permissionService.findOne(req, +id);
 
     return {
       message: 'Success.',

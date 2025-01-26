@@ -44,8 +44,8 @@ export class CategoryController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:category')
   @ApiBearerAuth()
-  async findAll() {
-    const result = await this.categoryService.findAll();
+  async findAll(@Req() req: Request) {
+    const result = await this.categoryService.findAll(req);
 
     return {
       message: 'Success.',
@@ -59,8 +59,8 @@ export class CategoryController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Permissions('read:category')
   @ApiBearerAuth()
-  async findOne(@Param('id') id: string) {
-    const result = await this.categoryService.findOne(+id);
+  async findOne(@Req() req: Request, @Param('id') id: string) {
+    const result = await this.categoryService.findOne(req, +id);
 
     return {
       message: 'Success.',
