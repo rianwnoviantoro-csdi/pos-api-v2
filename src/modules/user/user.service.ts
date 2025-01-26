@@ -188,7 +188,7 @@ export class UserService {
 
       await createLog(
         this.connection,
-        user,
+        existUser.name,
         'USER_MODULE',
         `has request a new token`,
         existUser,
