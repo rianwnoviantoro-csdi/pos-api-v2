@@ -8,7 +8,7 @@ import {
 } from 'src/config/database/schemas/category.schema';
 import slugify from 'slugify';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 
 @Injectable()
 export class CategoryService {
@@ -37,7 +37,7 @@ export class CategoryService {
         this.connection,
         user,
         'CATEGORY_MODULE',
-        `User <b>${user.name}</b> add <b>${newCategory.name}</b> as new category at <b>${formatedDate(new Date())}</b>.`,
+        `add "${newCategory.name.toUpperCase()}" as new category`,
         { ...createCategoryDto },
       );
 
@@ -53,7 +53,7 @@ export class CategoryService {
         this.connection,
         user,
         'CATEGORY_MODULE',
-        `User <b>${user.name}</b> has view category at <b>${formatedDate(new Date())}</b>.`,
+        `view category`,
       );
 
       return await trx
@@ -112,7 +112,7 @@ export class CategoryService {
         this.connection,
         user,
         'CATEGORY_MODULE',
-        `User <b>${user.name}</b> has view category <b>${category.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view category "${category.name.toUpperCase()}"`,
         category,
       );
 
@@ -143,7 +143,7 @@ export class CategoryService {
         this.connection,
         user,
         'CATEGORY_MODULE',
-        `User <b>${user.name}</b> update category <b>${category.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `update category "${category.name.toUpperCase()}"`,
         { ...updateCategoryDto },
       );
 
@@ -165,7 +165,7 @@ export class CategoryService {
         this.connection,
         user,
         'CATEGORY_MODULE',
-        `User <b>${user.name}</b> delete category <b>${category.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete category "${category.name.toUpperCase()}"`,
       );
 
       return deletedCategory;

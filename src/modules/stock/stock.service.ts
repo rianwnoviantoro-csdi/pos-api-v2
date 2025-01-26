@@ -4,7 +4,7 @@ import { UpdateStockDto } from './dto/update-stock.dto';
 import { Brackets, Connection, DeleteResult } from 'typeorm';
 import { Stock, StockSchema } from 'src/config/database/schemas/stock.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class StockService {
         this.connection,
         user,
         'STOCK_MODULE',
-        `User <b>${user.name}</b> add <b>${stock.name}</b> as new stock at <b>${formatedDate(new Date())}</b>.`,
+        `add "${stock.name.toUpperCase()}" as new stock`,
         { ...createStockDto },
       );
 
@@ -69,13 +69,9 @@ export class StockService {
       const [stocks, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'STOCK_MODULE',
-        `User <b>${user.name}</b> has view stock at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'STOCK_MODULE', `view stock`, {
+        ...filter,
+      });
 
       return {
         data: stocks,
@@ -100,7 +96,7 @@ export class StockService {
         this.connection,
         user,
         'STOCK_MODULE',
-        `User <b>${user.name}</b> has view stock <b>${stock.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view stock "${stock.name.toUpperCase()}"`,
         stock,
       );
 
@@ -127,7 +123,7 @@ export class StockService {
         this.connection,
         user,
         'STOCK_MODULE',
-        `User <b>${user.name}<b/> update stock <b>${stock.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `update stock "${stock.name.toUpperCase()}"`,
         { ...updateStockDto },
       );
 
@@ -147,7 +143,7 @@ export class StockService {
         this.connection,
         user,
         'STOCK_MODULE',
-        `User <b>${user.name}</b> delete stock <b>${stock.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete stock "${stock.name.toUpperCase()}"`,
       );
 
       return deletedStock;

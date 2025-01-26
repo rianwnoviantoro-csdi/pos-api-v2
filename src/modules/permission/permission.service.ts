@@ -7,7 +7,7 @@ import {
   PermissionSchema,
 } from 'src/config/database/schemas/permission.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Injectable()
@@ -43,7 +43,7 @@ export class PermissionService {
         this.connection,
         user,
         'PERMISSION_MODULE',
-        `User <b>${user.name}</b> add <b>${permission.name}</b> as new permission at <b>${formatedDate(new Date())}</b>.`,
+        `add "${permission.name.toUpperCase()}" as new permission`,
         { ...createPermissionDto },
       );
 
@@ -92,13 +92,9 @@ export class PermissionService {
       const [permissions, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'PERMISSION_MODULE',
-        `User <b>${user.name}</b> has view permission at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'PERMISSION_MODULE', `has view`, {
+        ...filter,
+      });
 
       return {
         data: permissions,
@@ -125,7 +121,7 @@ export class PermissionService {
         this.connection,
         user,
         'PERMISSION_MODULE',
-        `User <b>${user.name}</b> has view permission <b>${permission.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view permission "${permission.name.toUpperCase()}"`,
         permission,
       );
 
@@ -173,7 +169,7 @@ export class PermissionService {
         this.connection,
         user,
         'PERMISSION_MODULE',
-        `User <b>${user.name}<b/> update permission <b>${permission.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `update permission "${permission.name.toUpperCase()}"`,
         { ...updatePermissionDto },
       );
 
@@ -197,7 +193,7 @@ export class PermissionService {
         this.connection,
         user,
         'PERMISSION_MODULE',
-        `User <b>${user.name}</b> delete permission <b>${permission.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete permission "${permission.name.toUpperCase().toUpperCase()}"`,
       );
 
       return deletedPermission;

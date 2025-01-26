@@ -4,7 +4,7 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { Brackets, Connection, DeleteResult } from 'typeorm';
 import { Role, RoleSchema } from 'src/config/database/schemas/role.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
 @Injectable()
@@ -39,7 +39,7 @@ export class RoleService {
         this.connection,
         user,
         'ROLE_MODULE',
-        `User <b>${user.name}</b> add <b>${role.name}</b> as new role at <b>${formatedDate(new Date())}</b>.`,
+        `add "${role.name.toUpperCase()}" as new role`,
         { ...createRoleDto },
       );
 
@@ -86,13 +86,9 @@ export class RoleService {
       const [roles, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'ROLE_MODULE',
-        `User <b>${user.name}</b> has view role at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'ROLE_MODULE', `view role`, {
+        ...filter,
+      });
 
       return {
         data: roles,
@@ -120,7 +116,7 @@ export class RoleService {
         this.connection,
         user,
         'ROLE_MODULE',
-        `User <b>${user.name}</b> has view role <b>${role.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view role "${role.name.toUpperCase()}"`,
         role,
       );
 
@@ -170,7 +166,7 @@ export class RoleService {
         this.connection,
         user,
         'ROLE_MODULE',
-        `User <b>${user.name}<b/> update role <b>${role.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `update role "${role.name.toUpperCase()}"`,
         { ...updateRoleDto },
       );
 
@@ -193,7 +189,7 @@ export class RoleService {
         this.connection,
         user,
         'ROLE_MODULE',
-        `User <b>${user.name}</b> delete role <b>${role.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete role "${role.name.toUpperCase()}"`,
       );
 
       return deletedRole;

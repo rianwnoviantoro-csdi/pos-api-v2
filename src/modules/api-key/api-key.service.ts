@@ -10,7 +10,7 @@ import {
   APIKeySchema,
 } from 'src/config/database/schemas/api-key.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 
 @Injectable()
 export class ApiKeyService {
@@ -31,7 +31,7 @@ export class ApiKeyService {
         this.connection,
         user,
         'API_KEY_MODULE',
-        `User <b>${user.name}</b> add <b>${createApiKeyDto.name}</b> as new api key at <b>${formatedDate(new Date())}</b>.`,
+        `add "${createApiKeyDto.name.toUpperCase()}" as new api key`,
       );
 
       return {
@@ -52,12 +52,7 @@ export class ApiKeyService {
 
       const user: any = req.user;
 
-      await createLog(
-        this.connection,
-        user,
-        'API_KEY_MODULE',
-        `User <b>${user.name}</b> has view api key at <b>${formatedDate(new Date())}</b>.`,
-      );
+      await createLog(this.connection, user, 'API_KEY_MODULE', `view api key`);
 
       return maskedApiKeys;
     });
@@ -75,7 +70,7 @@ export class ApiKeyService {
         this.connection,
         user,
         'API_KEY_MODULE',
-        `User <b>${user.name}</b> has view api key <b>${apiKey.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view api key "${apiKey.name.toUpperCase()}"`,
         {
           ...apiKey,
           key: `${apiKey.key.slice(0, 10)}${'*'.repeat(apiKey.key.length - 4)}`,
@@ -101,7 +96,7 @@ export class ApiKeyService {
         this.connection,
         user,
         'API_KEY_MODULE',
-        `User <b>${user.name}</b> delete api key <b>${apiKey.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete api key "${apiKey.name.toUpperCase()}"`,
       );
 
       return deletedApiKey;

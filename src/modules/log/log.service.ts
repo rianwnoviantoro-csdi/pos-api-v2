@@ -3,7 +3,7 @@ import { LogSchema } from 'src/config/database/schemas/log.schema';
 import { Brackets, Connection } from 'typeorm';
 import { FilterLogDto } from './dto/filter-log.dto';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 
 @Injectable()
 export class LogService {
@@ -91,13 +91,9 @@ export class LogService {
       const [logs, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'LOG_MODULE',
-        `User <b>${user.name}</b> has view log at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'LOG_MODULE', `view log`, {
+        ...filter,
+      });
 
       return {
         data: logs,
@@ -125,7 +121,7 @@ export class LogService {
         this.connection,
         user,
         'LOG_MODULE',
-        `User <b>${user.name}</b> has view log <b>${log.detail}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view log "${log.detail.toUpperCase()}"`,
         log,
       );
 

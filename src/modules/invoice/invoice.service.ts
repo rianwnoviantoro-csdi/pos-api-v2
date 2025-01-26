@@ -14,7 +14,7 @@ import { StockSchema } from 'src/config/database/schemas/stock.schema';
 import { RecipeSchema } from 'src/config/database/schemas/recipe.schema';
 import { MemberSchema } from 'src/config/database/schemas/member.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { FilterInvoiceDto } from './dto/filter-invoice.dto';
 
 @Injectable()
@@ -144,7 +144,7 @@ export class InvoiceService {
         this.connection,
         user,
         'INVOICE_MODULE',
-        `User <b>${user.name}</b> add <b>${invoice.code}</b> as new invoice at <b>${formatedDate(new Date())}</b>.`,
+        `add "${invoice.code}"`,
         { ...createInvoiceDto },
       );
 
@@ -224,13 +224,9 @@ export class InvoiceService {
       const [invoices, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'INVOICE_MODULE',
-        `User <b>${user.name}</b> has view invoice at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'INVOICE_MODULE', `view invoice`, {
+        ...filter,
+      });
 
       return {
         data: invoices,
@@ -261,7 +257,7 @@ export class InvoiceService {
         this.connection,
         user,
         'INVOICE_MODULE',
-        `User <b>${user.name}</b> has view invoice <b>${invoice.code}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `"view invoice "${invoice.code}"`,
         invoice,
       );
 

@@ -8,7 +8,7 @@ import {
 } from 'src/config/database/schemas/recipe.schema';
 import { RecipeIngredientSchema } from 'src/config/database/schemas/recipe-ingredient.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { FilterRecipeDto } from './dto/filter-recipe.dto';
 import {
   deleteImageFromCloudinary,
@@ -53,7 +53,7 @@ export class RecipeService {
         this.connection,
         user,
         'RECIPE_MODULE',
-        `User <b>${user.name}</b> add <b>${recipe.name}</b> as new recipe at <b>${formatedDate(new Date())}</b>.`,
+        `add "${recipe.name.toUpperCase()}"`,
         { ...createRecipeDto, ingredient: ingredientArray },
       );
 
@@ -122,13 +122,9 @@ export class RecipeService {
       const [recipes, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'RECIPE_MODULE',
-        `User <b>${user.name}</b> has view recipe at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'RECIPE_MODULE', `view recipe`, {
+        ...filter,
+      });
 
       return {
         data: recipes,
@@ -156,7 +152,7 @@ export class RecipeService {
         this.connection,
         user,
         'RECIPE_MODULE',
-        `User <b>${user.name}</b> has view recipe <b>${recipe.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view recipe "${recipe.name.toUpperCase()}"`,
         recipe,
       );
 
@@ -198,7 +194,7 @@ export class RecipeService {
         this.connection,
         user,
         'RECIPE_MODULE',
-        `User <b>${user.name}<b/> update recipe <b>${recipe.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `update recipe "${recipe.name.toUpperCase()}"`,
         { ...updateRecipeDto },
       );
 
@@ -225,7 +221,7 @@ export class RecipeService {
         this.connection,
         user,
         'RECIPE_MODULE',
-        `User <b>${user.name}</b> delete recipe <b>${recipe.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete recipe "${recipe.name.toUpperCase()}"`,
       );
 
       return deletedRecipe;

@@ -15,7 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { RoleSchema } from 'src/config/database/schemas/role.schema';
 import { FilterInvoiceDto } from './dto/filter-user.dto';
 
@@ -64,7 +64,7 @@ export class UserService {
         this.connection,
         user,
         'USER_MODULE',
-        `User <b>${user.name}</b> register <b>${result.name}</b> as new user with role <b>${role.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `register "${result.name.toUpperCase()}" as new user with role "${role.name.toUpperCase()}"`,
         { ...result, role: role.id },
       );
 
@@ -74,7 +74,7 @@ export class UserService {
 
   async login(loginDto: LoginDto, req: Request, res: Response): Promise<any> {
     return this.connection.transaction(async (trx) => {
-      const existUser = await trx.findOne(UserSchema, {
+      const existUser: User = await trx.findOne(UserSchema, {
         where: { email: loginDto.email },
         relations: ['roles', 'roles.permissions'],
       });
@@ -115,10 +115,12 @@ export class UserService {
 
       await createLog(
         this.connection,
-        null,
+        existUser.name,
         'USER_MODULE',
-        `User <b>${existUser.name}</b> has been logged in at <b>${formatedDate(new Date())}</b>.`,
-        { ...existUser },
+        `been logged in`,
+        {
+          ...existUser,
+        },
       );
 
       return { user: existUser, token: accessToken };
@@ -188,7 +190,7 @@ export class UserService {
         this.connection,
         user,
         'USER_MODULE',
-        `User <b>${existUser.name}</b> has request a new token at <b>${formatedDate(new Date())}</b>.`,
+        `has request a new token`,
         existUser,
       );
 
@@ -263,13 +265,9 @@ export class UserService {
       const [users, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'USER_MODULE',
-        `User <b>${user.name}</b> has view user at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'USER_MODULE', `view user`, {
+        ...filter,
+      });
 
       return {
         data: users,
@@ -300,7 +298,7 @@ export class UserService {
         this.connection,
         ReqUser,
         'USER_MODULE',
-        `User <b>${ReqUser.name}</b> has view user <b>${user.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view user "${user.name.toUpperCase()}"`,
         user,
       );
 
@@ -324,7 +322,7 @@ export class UserService {
         this.connection,
         user,
         'USER_MODULE',
-        `User <b>${user.name}</b> delete user <b>${existUser.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete user "${existUser.name.toUpperCase()}"`,
       );
 
       return deletedUser;

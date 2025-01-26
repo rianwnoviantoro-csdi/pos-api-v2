@@ -10,17 +10,17 @@ export function formatedDate(date: Date): string {
 
 export async function createLog(
   connection: Connection,
-  user: User | null,
+  user: User | string,
   module: string,
-  detail: string,
-  additionalInfo: Record<string, any> = {},
+  act: string,
+  additionalInfo: any = {},
 ): Promise<void> {
   await connection.transaction(async (trx) => {
     await trx.save(LogSchema, {
-      user,
-      role: user ? user.roles[0] : null,
+      user: typeof user === 'string' ? null : user,
+      role: typeof user === 'string' ? null : user.roles[0],
       module,
-      detail,
+      detail: `User <b>${typeof user === 'string' ? user : user.name}</b> has <b>${act}</b> at <b>${formatedDate(new Date())}</b>.`,
       additionalInfo,
     });
   });

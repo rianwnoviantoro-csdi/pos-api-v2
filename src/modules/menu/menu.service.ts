@@ -4,7 +4,7 @@ import { RecipeSchema } from 'src/config/database/schemas/recipe.schema';
 import { StockSchema } from 'src/config/database/schemas/stock.schema';
 import { FilterMenuDto } from './dto/filter-menu.dto';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 
 @Injectable()
 export class MenuService {
@@ -104,13 +104,9 @@ export class MenuService {
       }
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'MENU_MODULE',
-        `User <b>${user.name}</b> has view menu at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'MENU_MODULE', `view menu`, {
+        ...filter,
+      });
 
       return {
         data: availableMenus,

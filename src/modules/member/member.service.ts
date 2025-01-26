@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { Brackets, Connection, DeleteResult } from 'typeorm';
@@ -11,7 +7,7 @@ import {
   MemberSchema,
 } from 'src/config/database/schemas/member.schema';
 import { Request } from 'express';
-import { createLog, formatedDate } from 'src/commons/utils/log.util';
+import { createLog } from 'src/commons/utils/log.util';
 import { User } from 'src/config/database/schemas/user.schema';
 import { BaseFilterDto } from 'src/commons/dto/base-filter.dto';
 
@@ -34,7 +30,7 @@ export class MemberService {
         this.connection,
         user,
         'MEMBER_MODULE',
-        `User <b>${user.name}</b> add <b>${member.name}</b> as new member at <b>${formatedDate(new Date())}</b>.`,
+        `add "${member.name.toUpperCase()}" as new member`,
         { ...createMemberDto },
       );
 
@@ -85,13 +81,9 @@ export class MemberService {
       const [members, total] = await query.getManyAndCount();
 
       const user: any = req.user;
-      await createLog(
-        this.connection,
-        user,
-        'MEMBER_MODULE',
-        `User <b>${user.name}</b> has view member at <b>${formatedDate(new Date())}</b>.`,
-        { ...filter },
-      );
+      await createLog(this.connection, user, 'MEMBER_MODULE', `view member`, {
+        ...filter,
+      });
 
       return {
         data: members,
@@ -119,7 +111,7 @@ export class MemberService {
         this.connection,
         user,
         'MEMBER_MODULE',
-        `User <b>${user.name}</b> has view member <b>${member.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `view member "${member.name.toUpperCase()}"`,
         member,
       );
 
@@ -146,7 +138,7 @@ export class MemberService {
         this.connection,
         user,
         'MEMBER_MODULE',
-        `User <b>${user.name}</b> update member <b>${member.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `update member "${member.name}`,
         { ...updateMemberDto },
       );
 
@@ -166,7 +158,7 @@ export class MemberService {
         this.connection,
         user,
         'MEMBER_MODULE',
-        `User <b>${user.name}</b> delete member <b>${member.name}</b> at <b>${formatedDate(new Date())}</b>.`,
+        `delete member "${member.name.toUpperCase()}"`,
       );
 
       return deletedMember;
